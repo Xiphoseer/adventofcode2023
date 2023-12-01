@@ -1,0 +1,9 @@
+[package]
+name = "adventofcode2023"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+argh = "0.1.12"
+color-eyre = "0.6.2"
+regex = "1.10.2"
