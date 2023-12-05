@@ -4,16 +4,6 @@ use std::{
     str::FromStr,
 };
 
-#[derive(argh::FromArgs)]
-/// Day 2 Challenge
-struct Options {}
-
-fn main() -> color_eyre::Result<()> {
-    let _opts: Options = argh::from_env();
-
-    Ok(())
-}
-
 enum Color {
     Red,
     Green,
@@ -107,7 +97,7 @@ pub fn run(path: &str, task: Task) -> color_eyre::Result<usize> {
 
 #[cfg(test)]
 mod tests {
-    use crate::Task;
+    use super::Task;
 
     #[test]
     fn example() {

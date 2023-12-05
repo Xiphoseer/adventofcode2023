@@ -1,22 +1,13 @@
 use std::{
     fs::File,
     io::{BufRead, BufReader},
-    path::PathBuf,
+    path::Path,
 };
 
 use regex::Regex;
 
-#[derive(argh::FromArgs)]
-/// Day 1 Challenge
-struct Options {
-    #[argh(positional)]
-    /// input file path
-    path: PathBuf,
-}
-
-fn main() -> color_eyre::Result<()> {
-    let opts: Options = argh::from_env();
-    let mut reader = BufReader::new(File::open(opts.path)?);
+pub fn main(path: &Path) -> color_eyre::Result<usize> {
+    let mut reader = BufReader::new(File::open(path)?);
 
     let last = ".*(one|two|three|four|five|six|seven|eight|nine|[0-9])";
     let basic = &last[2..];
@@ -46,9 +37,7 @@ fn main() -> color_eyre::Result<()> {
         buf.clear();
     }
 
-    eprintln!("Answer: {}", acc); // Wrong: 54953, Correct Answer: 54925
-
-    Ok(())
+    Ok(acc)
 }
 
 fn parse(k: &str) -> Option<usize> {
@@ -71,4 +60,15 @@ fn _digit_iter(buf: &str, zero: usize) -> impl Iterator<Item = usize> + DoubleEn
     buf.chars()
         .filter(|c| c.is_ascii_digit())
         .map(move |x| x as usize - zero)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    #[test]
+    fn part2() {
+        let result = super::main(Path::new("res/day1/input.txt")).unwrap();
+        assert_eq!(result, 54925); // Wrong: 54953, Correct Answer: 54925
+    }
 }
