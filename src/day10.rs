@@ -86,15 +86,20 @@ impl Map {
 
 pub fn run(path: &Path) -> (usize, usize) {
     let map = Map::new(path);
-    let mut border = BTreeMap::new();
-    let len = scan(&map, &mut border).unwrap();
-    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-    enum State {
-        Out,
-        BottomBorder,
-        In,
-        TopBorder,
-    }
+    let (len, border) = scan(&map).unwrap();
+    let in_fields = area(&map, &border);
+    (len, in_fields)
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+enum State {
+    Out,
+    BottomBorder,
+    In,
+    TopBorder,
+}
+
+fn area(map: &Map, border: &BTreeMap<(usize, usize), Edge>) -> usize {
     let mut in_fields = 0;
     eprintln!("Color: {}x{}", map.width, map.height);
     for y in 0..map.height {
@@ -127,11 +132,13 @@ pub fn run(path: &Path) -> (usize, usize) {
             }
         }
     }
-    (len, in_fields)
+    in_fields
 }
 
-fn scan(map: &Map, border: &mut BTreeMap<(usize, usize), Edge>) -> Option<usize> {
+type EdgeMap = BTreeMap<(usize, usize), Edge>;
+fn scan(map: &Map) -> Option<(usize, EdgeMap)> {
     let (sx, sy) = map.start;
+    let mut border = BTreeMap::new();
     eprintln!("{sx},{sy}");
     use Dir::*;
     for start_dir in [Up, Down, Left, Right] {
@@ -155,7 +162,7 @@ fn scan(map: &Map, border: &mut BTreeMap<(usize, usize), Edge>) -> Option<usize>
                 break None;
             }
         } {
-            return Some(len / 2);
+            return Some((len / 2, border));
         }
     }
     None
