@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{BufRead, BufReader},
+    io::{self, BufRead, BufReader},
     str::FromStr,
 };
 
@@ -34,7 +34,7 @@ pub enum Task {
     Task2,
 }
 
-pub fn run(path: &str, task: Task) -> color_eyre::Result<usize> {
+pub fn run(path: &str, task: Task) -> io::Result<usize> {
     let mut reader = BufReader::new(File::open(path).unwrap());
     let mut buf = String::new();
 

@@ -1,12 +1,12 @@
 use std::{
     fs::File,
-    io::{BufRead, BufReader},
+    io::{self, BufRead, BufReader},
     path::Path,
 };
 
 use regex::Regex;
 
-pub fn main(path: &Path) -> color_eyre::Result<usize> {
+pub fn main(path: &Path) -> io::Result<usize> {
     let mut reader = BufReader::new(File::open(path)?);
 
     let last = ".*(one|two|three|four|five|six|seven|eight|nine|[0-9])";
