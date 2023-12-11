@@ -149,7 +149,7 @@ fn area(map: &Map, border: &BTreeMap<(usize, usize), Edge>) -> usize {
         }
         drawing.push('\n');
     }
-    //std::fs::write(out, drawing).unwrap();
+    // std::fs::write(_out, drawing).unwrap();
     in_fields
 }
 

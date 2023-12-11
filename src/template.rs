@@ -12,21 +12,21 @@ mod tests {
 
     #[test]
     fn example1() {
-        run(Path::new("res/dayX/example.txt"))
+        run(Path::new("res/dayX/example.txt"));
     }
     
     #[test]
     fn part1() {
-        run(Path::new("res/dayX/input.txt"))
+        run(Path::new("res/dayX/input.txt"));
     }
 
     #[test]
     fn example2() {
-        run(Path::new("res/dayX/example.txt"))
+        run(Path::new("res/dayX/example.txt"));
     }
 
     #[test]
     fn part2() {
-        run(Path::new("res/dayX/input.txt"))
+        run(Path::new("res/dayX/input.txt"));
     }
 }
