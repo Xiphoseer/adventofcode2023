@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, path::Path};
+use std::{collections::BTreeMap, path::Path, time::SystemTime};
 
 #[derive(Debug, Copy, Clone)]
 pub enum Dir {
@@ -101,15 +101,28 @@ enum State {
 
 fn area(map: &Map, border: &BTreeMap<(usize, usize), Edge>) -> usize {
     let mut in_fields = 0;
+    let ts = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
+    let _out = format!("res/day10/output{}.txt", ts.as_micros());
+    let mut drawing = String::new();
     eprintln!("Color: {}x{}", map.width, map.height);
     for y in 0..map.height {
         use Edge::*;
         use State::*;
         let mut state = Out;
         for x in 0..map.width {
-            if let Some(edge) = border.get(&(x, y)) {
+            if let Some(edge) = border.get(&(x, y)).copied() {
                 eprintln!("{state:?} {edge:?} {x},{y}");
-                state = match (state, *edge) {
+                drawing.push(match edge {
+                    SouthEast => '╔',
+                    NorthEast => '╚',
+                    SouthWest => '╗',
+                    NorthWest => '╝',
+                    NorthSouth => '║',
+                    EastWest => '═',
+                });
+                state = match (state, edge) {
                     (Out, SouthEast) => TopBorder,
                     (Out, NorthEast) => BottomBorder,
                     (Out, SouthWest | NorthWest | EastWest) => unreachable!(),
@@ -128,10 +141,15 @@ fn area(map: &Map, border: &BTreeMap<(usize, usize), Edge>) -> usize {
                     (BottomBorder, EastWest) => BottomBorder,
                 };
             } else if state == In {
+                drawing.push('i');
                 in_fields += 1;
+            } else {
+                drawing.push(' ');
             }
         }
+        drawing.push('\n');
     }
+    //std::fs::write(out, drawing).unwrap();
     in_fields
 }
 
