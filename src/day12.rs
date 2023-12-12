@@ -101,10 +101,13 @@ pub mod part2 {
     pub fn variants(pattern: &str, lengths: &[usize], mul: usize) -> usize {
         let states = make_states(lengths, mul);
         let final_state = nfa(&states, pattern, 5);
+        // Check the end-state (past the end of our state vector)
         let post_state_id = states.len();
-        let final_state_id = post_state_id - 1;
         let post_count = final_state.get(&post_state_id).copied().unwrap_or(0);
+        // Check the last end state (we don't need trailing '.' and this makes the loop easier)
+        let final_state_id = post_state_id - 1;
         let final_count = final_state.get(&final_state_id).copied().unwrap_or(0);
+        // Add those together
         post_count + final_count
     }
 
@@ -134,36 +137,27 @@ pub mod part2 {
         for (&state, &count) in input {
             let kind = states.get(state).copied();
             match (kind, pat) {
+                // We have a true choice
                 (Some(State::SeqStart), Pattern::Any) => {
                     *next.entry(state + 1).or_default() += count;
                     *next.entry(state).or_default() += count;
                 }
-                (Some(State::SeqStart), Pattern::Broken) => {
+                // The current state forces us to pick '#' or '.'
+                (Some(State::SeqStart), Pattern::Broken)
+                | (Some(State::Seq), Pattern::Any | Pattern::Broken)
+                | (Some(State::SeqEnd), Pattern::Any | Pattern::Working) => {
                     *next.entry(state + 1).or_default() += count;
                 }
-                (Some(State::SeqStart), Pattern::Working) => {
+                // The current state forces us to remain in the current state (no '#')
+                (Some(State::SeqStart), Pattern::Working)
+                | (None, Pattern::Any | Pattern::Working) => {
                     *next.entry(state).or_default() += count;
                 }
-                (Some(State::Seq), Pattern::Any | Pattern::Broken) => {
-                    // we need a broken for any State::Seq
-                    *next.entry(state + 1).or_default() += count;
-                }
-                (Some(State::Seq), Pattern::Working) => {
+                // The current state forces us into the failure state
+                (Some(State::Seq), Pattern::Working)
+                | (Some(State::SeqEnd), Pattern::Broken)
+                | (None, Pattern::Broken) => {
                     // will not generate new states
-                }
-                (Some(State::SeqEnd), Pattern::Any | Pattern::Working) => {
-                    // we need a working for any State::SeqEnd (so the length matches)
-                    *next.entry(state + 1).or_default() += count;
-                }
-                (Some(State::SeqEnd), Pattern::Broken) => {
-                    // will not generate new states
-                }
-                (None, Pattern::Broken) => {
-                    // will not generate new states
-                }
-                (None, Pattern::Any | Pattern::Working) => {
-                    // will not generate new states
-                    *next.entry(state).or_default() += count;
                 }
             }
         }
