@@ -1,6 +1,13 @@
-use std::{ops::Deref, path::Path};
+use std::{
+    ops::{Deref, Range},
+    path::Path,
+};
 
 use num::Integer;
+
+pub mod area;
+
+pub type Pos<A> = (A, A);
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Direction {
@@ -52,6 +59,14 @@ impl MapDimensions {
     pub fn of_index(&self, i: usize) -> (usize, usize) {
         let (y, x) = i.div_rem(&self.stride); // x = i % stride, y = i / stride
         (x, y)
+    }
+
+    pub fn xrange(&self) -> Range<usize> {
+        0..self.width()
+    }
+
+    pub fn yrange(&self) -> Range<usize> {
+        0..self.height()
     }
 
     pub fn width(&self) -> usize {

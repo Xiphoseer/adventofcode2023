@@ -1,4 +1,9 @@
-use std::{collections::BTreeMap, path::Path, time::SystemTime};
+use std::{collections::BTreeMap, path::Path};
+
+use crate::util::{
+    area::{area, Edge, EdgeMap, Noop},
+    MapDimensions,
+};
 
 #[derive(Debug, Copy, Clone)]
 pub enum Dir {
@@ -19,48 +24,27 @@ impl Dir {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub enum Edge {
-    // `F`
-    SouthEast,
-    // `L`
-    NorthEast,
-    // `7`
-    SouthWest,
-    // `J`
-    NorthWest,
-    // `|`
-    NorthSouth,
-    // `-`
-    EastWest,
-}
-
 pub struct Map {
     bytes: Vec<u8>,
-    stride: usize,
-    width: usize,
-    height: usize,
+    dim: MapDimensions,
     start: (usize, usize),
 }
 
 impl Map {
     pub fn new(path: &Path) -> Self {
-        let bytes = std::fs::read(path).unwrap();
-        let width = bytes.iter().position(|x| *x == b'\n').expect("newline");
-        let stride = width + 1;
-        let height = bytes.len() / stride;
+        let text = std::fs::read_to_string(path).unwrap();
+        let dim = MapDimensions::of(&text);
+        let bytes = text.into_bytes();
         let start = bytes.iter().position(|x| *x == b'S').expect("start");
         Self {
             bytes,
-            width,
-            height,
-            start: (start % stride, start / stride),
-            stride,
+            dim,
+            start: dim.of_index(start),
         }
     }
 
     pub fn turn(&self, dir: Dir, (x, y): (usize, usize)) -> Option<(Dir, Edge)> {
-        let p = self.bytes[y * self.stride + x];
+        let p = self.bytes[self.dim.index((x, y))];
         use Dir::*;
         match (dir, p) {
             (Up, b'F') => Some((Right, Edge::SouthEast)),
@@ -86,75 +70,13 @@ impl Map {
 
 pub fn run(path: &Path) -> (usize, usize) {
     let map = Map::new(path);
-    let (len, border) = scan(&map).unwrap();
-    let in_fields = area(&map, &border);
+    let border = scan(&map).unwrap();
+    let len = border.len() / 2;
+    let in_fields = area(0..map.dim.width(), 0..map.dim.height(), &border, &mut Noop);
     (len, in_fields)
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-enum State {
-    Out,
-    BottomBorder,
-    In,
-    TopBorder,
-}
-
-fn area(map: &Map, border: &BTreeMap<(usize, usize), Edge>) -> usize {
-    let mut in_fields = 0;
-    let ts = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap();
-    let _out = format!("res/day10/output{}.txt", ts.as_micros());
-    let mut drawing = String::new();
-    eprintln!("Color: {}x{}", map.width, map.height);
-    for y in 0..map.height {
-        use Edge::*;
-        use State::*;
-        let mut state = Out;
-        for x in 0..map.width {
-            if let Some(edge) = border.get(&(x, y)).copied() {
-                eprintln!("{state:?} {edge:?} {x},{y}");
-                drawing.push(match edge {
-                    SouthEast => '╔',
-                    NorthEast => '╚',
-                    SouthWest => '╗',
-                    NorthWest => '╝',
-                    NorthSouth => '║',
-                    EastWest => '═',
-                });
-                state = match (state, edge) {
-                    (Out, SouthEast) => TopBorder,
-                    (Out, NorthEast) => BottomBorder,
-                    (Out, SouthWest | NorthWest | EastWest) => unreachable!(),
-                    (Out, NorthSouth) => In,
-                    (TopBorder, SouthEast | NorthEast | NorthSouth) => unreachable!(),
-                    (TopBorder, SouthWest) => Out,
-                    (TopBorder, NorthWest) => In,
-                    (TopBorder, EastWest) => TopBorder,
-                    (In, SouthEast) => BottomBorder,
-                    (In, NorthEast) => TopBorder,
-                    (In, SouthWest | NorthWest | EastWest) => unreachable!(),
-                    (In, NorthSouth) => Out,
-                    (BottomBorder, SouthEast | NorthEast | NorthSouth) => unreachable!(),
-                    (BottomBorder, SouthWest) => In,
-                    (BottomBorder, NorthWest) => Out,
-                    (BottomBorder, EastWest) => BottomBorder,
-                };
-            } else if state == In {
-                drawing.push('i');
-                in_fields += 1;
-            } else {
-                drawing.push(' ');
-            }
-        }
-        drawing.push('\n');
-    }
-    // std::fs::write(_out, drawing).unwrap();
-    in_fields
-}
-
-type EdgeMap = BTreeMap<(usize, usize), Edge>;
-fn scan(map: &Map) -> Option<(usize, EdgeMap)> {
+fn scan(map: &Map) -> Option<EdgeMap<usize>> {
     let (sx, sy) = map.start;
     let mut border = BTreeMap::new();
     eprintln!("{sx},{sy}");
@@ -163,24 +85,20 @@ fn scan(map: &Map) -> Option<(usize, EdgeMap)> {
         let mut dir = start_dir;
         eprintln!("{dir:?}");
         let (mut x, mut y) = (sx, sy);
-        let mut count = 0;
-        if let Some(len) = loop {
+        loop {
             (x, y) = dir.go((x, y));
             eprintln!("{dir:?} to {x},{y}");
-            count += 1;
             if (x, y) == (sx, sy) {
                 let start_edge = start_edge(start_dir, dir);
                 border.insert((sx, sy), start_edge);
-                break Some(count);
+                return Some(border);
             }
             if let Some((next_dir, edge)) = map.turn(dir, (x, y)) {
                 border.insert((x, y), edge);
                 dir = next_dir;
             } else {
-                break None;
+                break;
             }
-        } {
-            return Some((len / 2, border));
         }
     }
     None
