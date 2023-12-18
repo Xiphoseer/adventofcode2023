@@ -138,11 +138,7 @@ pub fn run_part2(path: &Path) -> usize {
 }
 
 fn update1(turns: &mut Vec<(Turn, usize)>, next: usize) -> (usize, usize) {
-    let len = turns.len();
-    let a = (next + (len - 1)) % len;
-    let b = next;
-    let c = (next + 1) % len;
-    let d = (next + 2) % len;
+    let (a, b, c, d) = get_indices(turns, next);
     let diff = (turns[b].1, turns[c].1);
     turns[a].1 += turns[c].1;
     turns[d].1 += turns[b].1;
@@ -161,16 +157,21 @@ fn remove_two(turns: &mut Vec<(Turn, usize)>, b: usize, c: usize) {
 }
 
 fn update2(turns: &mut Vec<(Turn, usize)>, next: usize) -> (usize, usize) {
-    let len = turns.len();
-    let a = (next + (len - 1)) % len;
-    let b = next;
-    let c = (next + 1) % len;
-    let d = (next + 2) % len;
+    let (a, b, c, d) = get_indices(turns, next);
     let diff = (turns[b].1, turns[c].1);
     turns[a].1 += turns[c].1;
     turns[d].1 -= turns[b].1;
     remove_two(turns, b, c);
     diff
+}
+
+fn get_indices(turns: &mut Vec<(Turn, usize)>, next: usize) -> (usize, usize, usize, usize) {
+    let len = turns.len();
+    let a = (next + (len - 1)) % len;
+    let b = next;
+    let c = (next + 1) % len;
+    let d = (next + 2) % len;
+    (a, b, c, d)
 }
 
 fn find_next(
@@ -201,27 +202,7 @@ pub fn run_part1(path: &Path) -> usize {
     let mut pos = (0isize, 0isize);
     let mut prev_dir = input.last().map(|f| f.0).unwrap();
     for (dir, cnt) in input {
-        edges.insert(
-            pos,
-            match (prev_dir, dir) {
-                (Direction::Right, Direction::Right) => Edge::EastWest,
-                (Direction::Right, Direction::Up) => Edge::NorthWest,
-                (Direction::Right, Direction::Left) => panic!(),
-                (Direction::Right, Direction::Down) => Edge::SouthWest,
-                (Direction::Up, Direction::Right) => Edge::SouthEast,
-                (Direction::Up, Direction::Up) => Edge::NorthSouth,
-                (Direction::Up, Direction::Left) => Edge::SouthWest,
-                (Direction::Up, Direction::Down) => panic!(),
-                (Direction::Left, Direction::Right) => panic!(),
-                (Direction::Left, Direction::Up) => Edge::NorthEast,
-                (Direction::Left, Direction::Left) => Edge::EastWest,
-                (Direction::Left, Direction::Down) => Edge::SouthEast,
-                (Direction::Down, Direction::Right) => Edge::NorthEast,
-                (Direction::Down, Direction::Up) => panic!(),
-                (Direction::Down, Direction::Left) => Edge::NorthWest,
-                (Direction::Down, Direction::Down) => Edge::NorthSouth,
-            },
-        );
+        edges.insert(pos, Edge::of_dir_pair(prev_dir, dir).unwrap());
         match dir {
             Direction::Right => {
                 let edge = Edge::EastWest;

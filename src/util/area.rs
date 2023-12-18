@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, fmt::Display, ops::Range, time::SystemTime};
 
-use super::Pos;
+use super::{Direction, Pos};
 
 #[derive(Debug, Copy, Clone)]
 pub enum Edge {
@@ -16,6 +16,34 @@ pub enum Edge {
     NorthSouth,
     // `-`
     EastWest,
+}
+
+impl Edge {
+    pub fn of_dir_pair(prev_dir: Direction, dir: Direction) -> Option<Self> {
+        use Direction::*;
+        match (prev_dir, dir) {
+            (Right, Up) | (Down, Left) => Some(Self::NorthWest),
+            (Right, Down) | (Up, Left) => Some(Self::SouthWest),
+            (Up, Right) | (Left, Down) => Some(Self::SouthEast),
+            (Left, Up) | (Down, Right) => Some(Self::NorthEast),
+
+            (Right, Right) | (Left, Left) => Some(Self::EastWest),
+            (Up, Up) | (Down, Down) => Some(Self::NorthSouth),
+
+            (Right, Left) | (Up, Down) | (Left, Right) | (Down, Up) => None,
+        }
+    }
+
+    fn to_box_drawing_char(self) -> char {
+        match self {
+            Self::SouthEast => '╔',
+            Self::NorthEast => '╚',
+            Self::SouthWest => '╗',
+            Self::NorthWest => '╝',
+            Self::NorthSouth => '║',
+            Self::EastWest => '═',
+        }
+    }
 }
 
 pub type EdgeMap<A> = BTreeMap<Pos<A>, Edge>;
@@ -62,15 +90,7 @@ impl Drawing {
 impl<A: Display> AreaListener<A> for Drawing {
     fn on_edge(&mut self, (x, y): Pos<A>, edge: Edge) {
         eprintln!("{edge:?} {x},{y}");
-        use Edge::*;
-        self.content.push(match edge {
-            SouthEast => '╔',
-            NorthEast => '╚',
-            SouthWest => '╗',
-            NorthWest => '╝',
-            NorthSouth => '║',
-            EastWest => '═',
-        });
+        self.content.push(edge.to_box_drawing_char());
     }
 
     fn on_inside(&mut self) {
