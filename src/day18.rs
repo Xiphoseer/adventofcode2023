@@ -146,6 +146,15 @@ fn update1(turns: &mut Vec<(Turn, usize)>, next: usize) -> (usize, usize) {
     diff
 }
 
+fn update2(turns: &mut Vec<(Turn, usize)>, next: usize) -> (usize, usize) {
+    let (a, b, c, d) = get_indices(turns, next);
+    let diff = (turns[b].1, turns[c].1);
+    turns[a].1 += turns[c].1;
+    turns[d].1 -= turns[b].1;
+    remove_two(turns, b, c);
+    diff
+}
+
 fn remove_two(turns: &mut Vec<(Turn, usize)>, b: usize, c: usize) {
     if b > c {
         turns.remove(b);
@@ -154,15 +163,6 @@ fn remove_two(turns: &mut Vec<(Turn, usize)>, b: usize, c: usize) {
         turns.remove(c);
         turns.remove(b);
     }
-}
-
-fn update2(turns: &mut Vec<(Turn, usize)>, next: usize) -> (usize, usize) {
-    let (a, b, c, d) = get_indices(turns, next);
-    let diff = (turns[b].1, turns[c].1);
-    turns[a].1 += turns[c].1;
-    turns[d].1 -= turns[b].1;
-    remove_two(turns, b, c);
-    diff
 }
 
 fn get_indices(turns: &mut Vec<(Turn, usize)>, next: usize) -> (usize, usize, usize, usize) {
